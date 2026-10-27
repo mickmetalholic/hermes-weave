@@ -24,20 +24,20 @@ Use this skill when the user wants to install, initialize, configure, or operate
 The Hermes Weave source repository is **public**, so no GitHub login is needed for installation. Do not clone a persistent source checkout or run `curl | bash`.
 
 1. Check Python >=3.10, Git and a local Hermes home at `~/.hermes`. Confirm with the user before any installation.
-2. Download the local installer from the currently active feature branch, then **inspect the contents** before asking for permission to execute:
+2. Download the local installer from the `main` branch, then **inspect the contents** before asking for permission to execute:
 
    ```bash
    curl -fsSLo /tmp/hermes-weave-install.sh \
-     https://raw.githubusercontent.com/mickmetalholic/hermes-weave/feat/host-namespaced-sync-mvp/install.sh
+     https://raw.githubusercontent.com/mickmetalholic/hermes-weave/main/install.sh
    # With user approval:
-   bash /tmp/hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp --no-init
+   bash /tmp/hermes-weave-install.sh --no-init
    ```
 
 3. The installer installs the Python CLI via pip from public GitHub source into `~/.hermes-weave/venv` and registers this bundled Skill. It does not leave a `source/` checkout. Run `~/.hermes-weave/venv/bin/weave doctor --json` afterward.
 4. Only then ask for a private data repository and a unique host ID to run `weave init`. GitHub CLI `gh` is needed **only if creating or verifying a private GitHub data repo**. No default data repository is embedded in the installer.
 5. If another Skill already occupies `~/.hermes/skills/hermes-weave`, do not overwrite without explicit approval; `weave skill install --replace` backs it up. Restart the Hermes session if newly installed Skills are not detected.
 
-After PR #1 is merged, prefer fetching the stable installer from `main` and omit the `--ref` flag. A pinned release tag is preferable to mutable branches for production.
+For reproducible deployments, prefer a pinned release tag or commit over a mutable `main` branch.
 
 ## Initializing the private data Git repository
 

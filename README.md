@@ -25,6 +25,14 @@ Separate PRIVATE DATA repo:  hermes-weave-data/
 
 One Git remote, one clone per device; only `hosts/<this-host>/` is written by that node. The remote is an ordinary Git repository (GitHub private repo, Gitea, or SSH bare Git). **Do not use the source-code repository as the data repository.**
 
+## AI-first installation (recommended)
+
+Want Hermes to install and operate Weave for you? Copy the prompt in [docs/ai-setup.md](docs/ai-setup.md) into a **trusted local Hermes session**. With your approval, Hermes can check prerequisites, clone this source checkout, review and run `scripts/bootstrap.sh`, install the bundled `hermes-weave` Skill, create/inspect a second private GitHub data repository with the `gh` CLI, register this machine with `weave init`, and run the first sync. No need to manually paste several shell commands or let an LLM write its own Git synchronization script.
+
+The bootstrap script installs Weave into an **isolated virtualenv**, puts the CLI at `~/.local/bin/weave` (when that path is free), and installs the bundled Skill at `~/.hermes/skills/hermes-weave/SKILL.md`. It will not overwrite an existing different Skill without explicit `weave skill install --replace`. **Start a new Hermes session after installation** to load it.
+
+When using the v0.1 PR instead of merged `main`, clone with `--branch feat/host-namespaced-sync-mvp` (shown in the AI setup guide). Inspect scripts before execution. Never run remote `curl | bash` installers.
+
 ## Getting started (macOS / Linux / WSL2)
 
 1. Create a **second, private Git repository** (e.g., `hermes-weave-data`), initialized with a README, and grant each computer Git read/write access. Do not put personal data in a public repo.
@@ -70,6 +78,10 @@ Imported skills are tracked in a local provenance ledger and **never republished
 
 | Command | Effect |
 | --- | --- |
+| `weave doctor --json` | Read-only local health and configuration check |
+| `weave skill install [--replace]` | Install bundled Hermes operator Skill; refuse silent overwrite |
+| `weave repo inspect OWNER/REPO` | Verify a GitHub data repository is private (requires `gh`) |
+| `weave repo create OWNER/REPO` | Explicitly create a private GitHub data repository (requires `gh` and authorization) |
 | `weave init` | Create per-host config and clone private data repo |
 | `weave pull` | Fetch remote data only; does **not** change Hermes |
 | `weave publish` | Fetch then publish current host snapshot; includes safeguards |

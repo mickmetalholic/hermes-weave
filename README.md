@@ -29,22 +29,14 @@ One Git remote, one clone per device; only `hosts/<this-host>/` is written by th
 
 **The source repository is now public.** You can download one local script; no GitHub CLI login or manual source checkout is necessary to install Hermes Weave.
 
-While v0.1 is under review in [PR #1](https://github.com/mickmetalholic/hermes-weave/pull/1), download the installer from its feature branch:
-
-```bash
-curl -fsSLo hermes-weave-install.sh \
-  https://raw.githubusercontent.com/mickmetalholic/hermes-weave/feat/host-namespaced-sync-mvp/install.sh
-
-# Inspect the script before running it.
-less hermes-weave-install.sh
-bash hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp
-```
-
-After the PR is merged into `main`, the simpler stable command will be:
+Install from the default `main` branch:
 
 ```bash
 curl -fsSLo hermes-weave-install.sh \
   https://raw.githubusercontent.com/mickmetalholic/hermes-weave/main/install.sh
+
+# Review the downloaded installer before running it.
+less hermes-weave-install.sh
 bash hermes-weave-install.sh
 ```
 
@@ -54,7 +46,7 @@ The **private data** repository is separate. `weave init` asks you to pick an ex
 
 For an AI-guided, non-interactive setup, run the installer with `--no-init` and let Hermes ask you for your desired host ID and private repository before running `weave init`. The installer refuses to silently overwrite a different existing Skill or an unrelated `weave` command.
 
-See [docs/ai-setup.md](docs/ai-setup.md) for a ready-to-paste Hermes Agent prompt. Since these URLs point to a moving Git branch, review the installer before execution; prefer a pinned release tag or commit for production deployment.
+See [docs/ai-setup.md](docs/ai-setup.md) for a ready-to-paste Hermes Agent prompt. Because `main` can change over time, review the installer before execution; prefer a pinned release tag or commit for reproducible production deployments.
 
 ## Getting started
 

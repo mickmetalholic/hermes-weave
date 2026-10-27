@@ -71,7 +71,7 @@ exit 77
         return result
 
     def test_install_without_login_or_source_clone_and_rerun(self):
-        self.run_script("--ref", "feat/host-namespaced-sync-mvp", "--no-init")
+        self.run_script("--no-init")
         home = self.home / ".hermes-weave"
         self.assertTrue((home / "venv" / "bin" / "weave").is_file())
         self.assertTrue((self.home / ".hermes" / "skills" / "hermes-weave" / "SKILL.md").is_file())

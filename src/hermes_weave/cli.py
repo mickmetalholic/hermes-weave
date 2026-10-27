@@ -256,6 +256,12 @@ def init(args: argparse.Namespace) -> None:
         raise WeaveError(f"Hermes home does not exist: {home}")
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9/_-]{0,95}", args.branch) or ".." in args.branch or "//" in args.branch:
         raise WeaveError("Invalid branch name")
+    # A sync DATA repository must never be the SOURCE repository.
+    remote = args.remote.lower().rstrip("/").removesuffix(".git")
+    if remote.endswith("/mickmetalholic/hermes-weave") or remote.endswith(":mickmetalholic/hermes-weave"):
+        raise WeaveError("Use a separate PRIVATE data repository, not mickmetalholic/hermes-weave")
+    if args.remote.startswith(("https://", "http://")) and "@" in args.remote.split("/", 3)[2]:
+        raise WeaveError("Do not put credentials into a Git remote URL; configure Git authentication separately")
     dest.parent.mkdir(parents=True, exist_ok=True)
     run_git(None, "clone", "--branch", args.branch, "--single-branch", "--", args.remote, str(dest))
     cfg = {"schema": SCHEMA, "host": host, "remote": args.remote, "branch": args.branch,
@@ -285,6 +291,8 @@ def export(cfg: dict[str, Any], args: argparse.Namespace) -> int:
         raise WeaveError("Refusing symlinked local skills directory")
     if skills_root.is_dir():
         for skill_name, skill in skill_directories(skills_root):
+            if skill_name == "hermes-weave":  # Bundled installer Skill; identical on all hosts.
+                continue
             if skill_name in imports:  # Never re-export imported content as an original.
                 continue
             try:
@@ -490,6 +498,16 @@ def parser() -> argparse.ArgumentParser:
     init_cmd.add_argument("--worktree", default="~/.local/share/hermes-weave/data")
     init_cmd.add_argument("--share-memory", action="store_true", help="Opt-in to publishing private MEMORY.md and USER.md")
     init_cmd.add_argument("--shared-config", help="Explicitly curated and redacted YAML file to publish (NOT Hermes config.yaml)")
+    skill_cmd = sub.add_parser("skill", help="Install the bundled AI-operable Hermes Skill")
+    skill_sub = skill_cmd.add_subparsers(dest="skill_command", required=True)
+    install_cmd = skill_sub.add_parser("install", help="Install the bundled Skill into local Hermes")
+    install_cmd.add_argument("--hermes-home", default="~/.hermes")
+    install_cmd.add_argument("--replace", action="store_true", help="Explicitly back up and replace a different installed Skill")
+    sub.add_parser("doctor", help="Read-only machine/CLI/Skill configuration diagnostics").add_argument("--json", action="store_true")
+    repo_cmd = sub.add_parser("repo", help="Inspect or create a PRIVATE GitHub data repository using gh")
+    repo_sub = repo_cmd.add_subparsers(dest="repo_command", required=True)
+    repo_sub.add_parser("inspect", help="Verify a GitHub repository is private").add_argument("name", help="OWNER/REPO")
+    repo_sub.add_parser("create", help="Explicitly create a private GitHub data repository").add_argument("name", help="OWNER/REPO")
     sub.add_parser("pull", help="Fetch peers without applying anything to Hermes")
     sub.add_parser("publish", help="Publish only this host's safe snapshot to Git")
     sub.add_parser("sync", help="Pull, publish, then summarize peers (no automatic imports)")
@@ -508,6 +526,22 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        # These setup commands do not need the data worktree or the sync lock.
+        if args.command == "doctor":
+            from .assistant import doctor
+            cfg_file = config_path(args)
+            info = read_json(cfg_file, {}) if cfg_file.exists() else {}
+            home = Path(info.get("hermes_home", "~/.hermes"))
+            print(json.dumps(doctor(cfg_file, home), indent=2))
+            return 0
+        if args.command == "skill":
+            from .assistant import install_skill
+            print(install_skill(Path(args.hermes_home), replace=args.replace))
+            return 0
+        if args.command == "repo":
+            from .assistant import github_repo
+            print(json.dumps(github_repo(args.name, create=args.repo_command == "create"), indent=2))
+            return 0
         with exclusive(args):
             if args.command == "init":
                 init(args)

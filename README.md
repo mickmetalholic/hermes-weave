@@ -27,29 +27,34 @@ One Git remote, one clone per device; only `hosts/<this-host>/` is written by th
 
 ## One-script installation (macOS / Linux / WSL2)
 
-No source checkout needed. **Use a separately reviewed local installer**; it downloads a temporary GitHub source archive, installs the CLI in an isolated Python virtual environment, registers the bundled Hermes Skill, and then offers `weave init`. The source archive is removed after installation. It does **not** choose or create your private data repository without asking.
+**The source repository is now public.** You can download one local script; no GitHub CLI login or manual source checkout is necessary to install Hermes Weave.
 
-The source repository is currently **private**, so authenticate `gh` with access to the source repo first:
+While v0.1 is under review in [PR #1](https://github.com/mickmetalholic/hermes-weave/pull/1), download the installer from its feature branch:
 
 ```bash
-gh auth login
-gh auth status
+curl -fsSLo hermes-weave-install.sh \
+  https://raw.githubusercontent.com/mickmetalholic/hermes-weave/feat/host-namespaced-sync-mvp/install.sh
 
-# Download the installer from the current testing branch (do not pipe to bash).
-gh api -H 'Accept: application/vnd.github.raw+json' \
-  'repos/mickmetalholic/hermes-weave/contents/install.sh?ref=feat%2Fhost-namespaced-sync-mvp' \
-  > hermes-weave-install.sh
-
-# Read the downloaded script before running it.
+# Inspect the script before running it.
 less hermes-weave-install.sh
 bash hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp
 ```
 
-When this PR is merged, omit `--ref` and fetch `install.sh` from `main`. Requirements: Python 3.10+, Git, an authenticated GitHub CLI (`gh`, while source is private), and an existing Hermes installation at `~/.hermes`. Never run a downloaded script without inspecting it. Installation does **not** need `git clone` or a persistent `source/` directory.
+After the PR is merged into `main`, the simpler stable command will be:
 
-If Hermes itself is guiding setup and cannot answer terminal prompts, use `bash hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp --no-init` and then let it ask you for approved `weave init` parameters. The install script doesn't silently overwrite another `weave` executable or an existing different Hermes Skill. For a planned Skill upgrade, inspect the changes first and explicitly run `weave skill install --replace` to back up and replace it.
+```bash
+curl -fsSLo hermes-weave-install.sh \
+  https://raw.githubusercontent.com/mickmetalholic/hermes-weave/main/install.sh
+bash hermes-weave-install.sh
+```
 
-To let Hermes guide the process, paste [docs/ai-setup.md](docs/ai-setup.md) into a local session.
+The script creates an isolated environment at `~/.hermes-weave/venv`, installs the Python CLI from the **public GitHub source** with pip (Git is used internally), registers the bundled Hermes Skill, checks setup with `weave doctor --json`, and offers to run `weave init` interactively. No `source/` directory is needed. Requirements: Python >=3.10, Git, and a local Hermes installation at `~/.hermes`; `curl` is only used to download the installer.
+
+The **private data** repository is separate. `weave init` asks you to pick an existing private Git remote or create a new private GitHub repository. **GitHub CLI (`gh`) authentication may still be required during initialization to create or verify a private GitHub data repository**, but is no longer needed just to install Weave.
+
+For an AI-guided, non-interactive setup, run the installer with `--no-init` and let Hermes ask you for your desired host ID and private repository before running `weave init`. The installer refuses to silently overwrite a different existing Skill or an unrelated `weave` command.
+
+See [docs/ai-setup.md](docs/ai-setup.md) for a ready-to-paste Hermes Agent prompt. Since these URLs point to a moving Git branch, review the installer before execution; prefer a pinned release tag or commit for production deployment.
 
 ## Getting started
 

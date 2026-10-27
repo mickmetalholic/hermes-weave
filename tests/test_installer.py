@@ -1,4 +1,4 @@
-"""Offline installer smoke tests using fake GitHub CLI and isolated HOME."""
+"""Offline installer smoke tests using a fake Python package installer and isolated HOME."""
 from __future__ import annotations
 
 import os
@@ -6,7 +6,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-import tarfile
 import tempfile
 import unittest
 
@@ -23,14 +22,6 @@ class InstallerTests(unittest.TestCase):
         (self.home / ".hermes").mkdir()
         self.bin = self.root / "bin"
         self.bin.mkdir()
-        package_root = self.root / "archive-package" / "hermes-weave-abcdef"
-        skill = package_root / "src" / "hermes_weave" / "resources" / "SKILL.md"
-        skill.parent.mkdir(parents=True)
-        skill.write_text("---\nname: hermes-weave\n---\n")
-        (package_root / "pyproject.toml").write_text("[project]\nname='hermes-weave'\n")
-        self.archive = self.root / "package.tar.gz"
-        with tarfile.open(self.archive, "w:gz") as tf:
-            tf.add(package_root, arcname=package_root.name)
         # The mocked Python delegates version checks to real Python, but substitutes venv/pip.
         python = self.bin / "python3"
         python.write_text(f'''#!/usr/bin/env bash
@@ -46,6 +37,7 @@ exec "{sys.executable}" "$@"
         mock_venv = self.root / "mock_venv_py"
         mock_venv.write_text('''#!/usr/bin/env bash
 if [[ "$1" == '-m' && "$2" == 'pip' ]]; then
+  [[ "$*" == *"git+https://github.com/mickmetalholic/hermes-weave.git@"* ]] || exit 65
   cat > "$(dirname "$0")/weave" <<'EOF'
 #!/usr/bin/env bash
 case "$1 $2" in
@@ -61,18 +53,14 @@ fi
 exit 77
 ''')
         mock_venv.chmod(0o755)
+        # gh is deliberately broken: public-source installation must not call it.
         gh = self.bin / "gh"
-        gh.write_text('''#!/usr/bin/env bash
-if [[ "$1" == 'auth' && "$2" == 'status' ]]; then exit 0; fi
-if [[ "$1" == 'api' ]]; then cat "$MOCK_TARBALL"; exit 0; fi
-exit 95
-''')
+        gh.write_text('#!/usr/bin/env bash\nexit 97\n')
         gh.chmod(0o755)
         self.env = {**os.environ,
                     "HOME": str(self.home),
                     "PATH": f"{self.bin}:{os.environ.get('PATH','')}",
-                    "MOCK_VENV_PY": str(mock_venv),
-                    "MOCK_TARBALL": str(self.archive)}
+                    "MOCK_VENV_PY": str(mock_venv)}
 
     def run_script(self, *flags: str, ok=True):
         result = subprocess.run(["bash", str(INSTALLER), *flags], env=self.env, text=True, capture_output=True)
@@ -82,7 +70,7 @@ exit 95
             self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         return result
 
-    def test_install_without_source_clone_and_rerun(self):
+    def test_install_without_login_or_source_clone_and_rerun(self):
         self.run_script("--ref", "feat/host-namespaced-sync-mvp", "--no-init")
         home = self.home / ".hermes-weave"
         self.assertTrue((home / "venv" / "bin" / "weave").is_file())

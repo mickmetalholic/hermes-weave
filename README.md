@@ -39,7 +39,9 @@ When using the v0.1 PR instead of merged `main`, clone with `--branch feat/host-
 2. On each computer, install Python >=3.10, Git, and Hermes, then install Weave:
 
    ```bash
-   git clone https://github.com/mickmetalholic/hermes-weave.git ~/.hermes-weave/source
+   mkdir -p ~/.hermes-weave
+   git clone --branch feat/host-namespaced-sync-mvp \
+     https://github.com/mickmetalholic/hermes-weave.git ~/.hermes-weave/source
    cd ~/.hermes-weave/source
    # Inspect scripts/bootstrap.sh, then run it with approval:
    bash scripts/bootstrap.sh

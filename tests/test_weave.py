@@ -147,6 +147,17 @@ class WeaveTests(unittest.TestCase):
         src.symlink_to(target, target_is_directory=True)
         self.weave("b", "apply", "a", "test", ok=False)
 
+    def test_duplicate_host_id_cannot_be_silently_claimed(self) -> None:
+        self.skill("a", "mine", "# Mine\n")
+        self.weave("a", "sync")
+        third_hermes = self.root / "third" / ".hermes"
+        third_hermes.mkdir(parents=True)
+        self.weave("third", "init", "--host", "a", "--remote", str(self.remote),
+                   "--hermes-home", str(third_hermes),
+                   "--worktree", str(self.root / "third" / "data"), ok=False)
+        self.assertFalse((self.root / "third" / "config.json").exists())
+        self.assertTrue((self.root / "third" / "data" / ".git").is_dir())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -25,55 +25,53 @@ Separate PRIVATE DATA repo:  (chosen by user during weave init)/
 
 One Git remote, one clone per device; only `hosts/<this-host>/` is written by that node. The remote is an ordinary Git repository (GitHub private repo, Gitea, or SSH bare Git). **Do not use the source-code repository as the data repository.**
 
-## AI-first installation (recommended)
+## One-script installation (macOS / Linux / WSL2)
 
-Want Hermes to install and operate Weave for you? Copy the prompt in [docs/ai-setup.md](docs/ai-setup.md) into a **trusted local Hermes session**. With your approval, Hermes can check prerequisites, clone this source checkout, review and run `scripts/bootstrap.sh`, install the bundled `hermes-weave` Skill, create/inspect a second private GitHub data repository with the `gh` CLI, register this machine with `weave init`, and run the first sync. No need to manually paste several shell commands or let an LLM write its own Git synchronization script.
+No source checkout needed. **Use a separately reviewed local installer**; it downloads a temporary GitHub source archive, installs the CLI in an isolated Python virtual environment, registers the bundled Hermes Skill, and then offers \`weave init\`. The source archive is removed after installation. It does **not** choose or create your private data repository without asking.
 
-The bootstrap script uses `~/.hermes-weave/source` for the source checkout and `~/.hermes-weave/venv` for an **isolated virtualenv**, puts the CLI at `~/.local/bin/weave` (when that path is free), and installs the bundled Skill at `~/.hermes/skills/hermes-weave/SKILL.md`. It will not overwrite an existing different Skill without explicit `weave skill install --replace`. **Start a new Hermes session after installation** to load it.
+The source repository is currently **private**, so authenticate \`gh\` with access to the source repo first:
 
-When using the v0.1 PR instead of merged `main`, clone with `--branch feat/host-namespaced-sync-mvp` (shown in the AI setup guide). Inspect scripts before execution. Never run remote `curl | bash` installers.
+\`\`\`bash
+gh auth login
+gh auth status
 
-## Getting started (macOS / Linux / WSL2)
+# Download the installer from the current testing branch (do not pipe to bash).
+gh api -H 'Accept: application/vnd.github.raw+json' \
+  'repos/mickmetalholic/hermes-weave/contents/install.sh?ref=feat%2Fhost-namespaced-sync-mvp' \
+  > hermes-weave-install.sh
 
-1. Plan for a **second, private Git repository**, separate from the Weave source. `weave init` can prompt you to connect an existing Git repo or create a new PRIVATE GitHub repo using an authenticated `gh` CLI. There is no built-in owner or data repository name. **GitHub remotes require `gh` to verify privacy**, even if the repository already exists; other Git servers require manual privacy verification. Each computer needs Git read/write access; never use a public repository for personal data.
-2. On each computer, install Python >=3.10, Git, and Hermes, then install Weave:
+# Read the downloaded script before running it.
+less hermes-weave-install.sh
+bash hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp
+\`\`\`
 
-   ```bash
-   mkdir -p ~/.hermes-weave
-   git clone --branch feat/host-namespaced-sync-mvp \
-     https://github.com/mickmetalholic/hermes-weave.git ~/.hermes-weave/source
-   cd ~/.hermes-weave/source
-   # Inspect scripts/bootstrap.sh, then run it with approval:
-   bash scripts/bootstrap.sh
-   ```
+When this PR is merged, omit \`--ref\` and fetch \`install.sh\` from \`main\`. Requirements: Python 3.10+, Git, an authenticated GitHub CLI (\`gh\`, while source is private), and an existing Hermes installation at \`~/.hermes\`. Never run a downloaded script without inspecting it. Installation does **not** need \`git clone\` or a persistent \`source/\` directory.
 
-3. On computer A, run the **interactive wizard** in a terminal:
+If Hermes itself is guiding setup and cannot answer terminal prompts, use \`bash hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp --no-init\` and then let it ask you for approved \`weave init\` parameters. The install script doesn't silently overwrite another \`weave\` executable or an existing different Hermes Skill. For a planned Skill upgrade, inspect the changes first and explicitly run \`weave skill install --replace\` to back up and replace it.
 
-   ```bash
-   weave init       # asks for unique host ID and private data repo (existing or create)
-   weave sync
-   weave review
-   ```
+To let Hermes guide the process, paste [docs/ai-setup.md](docs/ai-setup.md) into a local session.
 
-   On computer B, run `weave init` again with a **different host ID** and select the SAME private data repository. For a non-interactive Agent that has obtained your approval, use `weave init --host HOST --remote URL` (existing remote) or `weave init --host HOST --create-repo OWNER/REPO` (create new private GitHub repo).
+## Getting started
 
-4. After reading a peer's `SKILL.md`, explicitly import a new skill:
+Run \`weave init\` in a terminal (the installer can offer it automatically). It asks for a **unique stable host ID** and for your choice of **an existing private Git data repo or a new private GitHub repo**. Nothing about the data repository is hardcoded. All computers must use the **same** private data repository and a **different** host ID.
 
-   ```bash
-   weave apply macbook code-review
-   # If the name is already used locally:
-   weave apply macbook code-review --as code-review-macbook
-   # For a later update, back up and replace explicitly:
-   weave apply macbook code-review --replace
-   ```
+\`\`\`bash
+weave init
+weave sync
+weave review --json
 
-Imported skills are tracked in a local provenance ledger and **never republished as new originals**. If you intentionally want to develop and publish an imported skill as your own, run `weave promote code-review` first.
+# After approving and reviewing a Skill from another host:
+weave apply macbook code-review
+# Resolve a conflicting name with --as; replace requires opt-in backup.
+weave apply macbook code-review --as code-review-macbook
+\`\`\`
+
+For a non-interactive agent that has already obtained your approval, use \`weave init --host HOST --remote OWNER/PRIVATE-REPO\` or \`weave init --host HOST --create-repo OWNER/PRIVATE-REPO\`. Data stays in \`~/.hermes-weave/data\`. Memory publication remains **off** until explicitly enabled.
 
 ## Filesystem layout
 
 ```text
 ~/.hermes-weave/
-├── source/          # CLI source checkout
 ├── venv/            # isolated Python environment
 ├── data/            # private Git DATA clone (created by init)
 ├── config.json      # local node config
@@ -82,7 +80,7 @@ Imported skills are tracked in a local provenance ledger and **never republished
 └── logs/            # scheduled-task logs
 ```
 
-Hermes keeps its own Skills under `~/.hermes/skills/` including the installed `hermes-weave` operator Skill. The optional `weave` executable symlink is at `~/.local/bin/weave`. Paths can be customized using `HERMES_WEAVE_HOME` for the CLI data location and bootstrap installation, or via CLI init flags.
+Hermes keeps its own Skills under `~/.hermes/skills/` including the installed `hermes-weave` operator Skill. The optional `weave` executable symlink is at `~/.local/bin/weave`. Paths can be customized using `HERMES_WEAVE_HOME` for the CLI data location and installer, or via CLI init flags.
 
 ## Commands
 
@@ -112,7 +110,7 @@ Each host runs the same CLI on its own schedule. In system crontab on Linux:
 */30 * * * * /full/path/to/weave sync >> "$HOME/.hermes-weave/logs/cron.log" 2>&1
 ```
 
-`~/.hermes-weave/logs/` is created by the bootstrap script; use the **absolute path** to `weave` (`command -v weave`), and verify Git SSH authentication works non-interactively. On macOS prefer `launchd` or Hermes's no-agent cron script, depending on your local setup. Avoid scheduling overlapping syncs: Weave holds an exclusive local lock.
+`~/.hermes-weave/logs/` is created by the installer; use the **absolute path** to `weave` (`command -v weave`), and verify Git SSH authentication works non-interactively. On macOS prefer `launchd` or Hermes's no-agent cron script, depending on your local setup. Avoid scheduling overlapping syncs: Weave holds an exclusive local lock.
 
 ## Trust and safety
 

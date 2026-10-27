@@ -17,23 +17,23 @@ Use this skill when the user wants to install, initialize, configure, or operate
 
 ## Local directory layout
 
-\`~/.hermes-weave/\` contains \`venv/\` (installed CLI), \`data/\` (private data Git clone), \`config.json\`, \`state.json\`, \`sync.lock\`, and \`logs/\`. It does **not** require a source checkout. The Hermes Skill remains at \`~/.hermes/skills/hermes-weave/\`; the CLI symlink is \`~/.local/bin/weave\`.
+`~/.hermes-weave/` contains `venv/` (installed CLI), `data/` (private data Git clone), `config.json`, `state.json`, `sync.lock`, and `logs/`. It does **not** require a source checkout. The Hermes Skill remains at `~/.hermes/skills/hermes-weave/`; the CLI symlink is `~/.local/bin/weave`.
 
 ## First-time installation
 
-If \`weave\` is not installed:
+If `weave` is not installed:
 
-1. Verify Python >= 3.10, Git, \`gh\` (authenticated to the private source repo), and \`~/.hermes\`. Never install system-wide dependencies or use sudo without approval.
-2. Fetch the repository's root \`install.sh\` using authenticated GitHub CLI, saving it to a temporary local file:
+1. Verify Python >= 3.10, Git, `gh` (authenticated to the private source repo), and `~/.hermes`. Never install system-wide dependencies or use sudo without approval.
+2. Fetch the repository's root `install.sh` using authenticated GitHub CLI, saving it to a temporary local file:
 
-   \`\`\`bash
+   ```bash
    gh api -H 'Accept: application/vnd.github.raw+json' \
      'repos/mickmetalholic/hermes-weave/contents/install.sh?ref=feat%2Fhost-namespaced-sync-mvp' \
      > /tmp/hermes-weave-install.sh
-   \`\`\`
+   ```
 
-3. **Inspect the script** and obtain explicit permission to execute. Then run \`bash /tmp/hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp --no-init\` while this PR remains unmerged. Do not \`git clone\` source or run a remote \`curl | bash\` pipeline. The installer uses an ephemeral source tarball and bundles this Skill with the installed Python package.
-4. Verify \`~/.hermes-weave/venv/bin/weave doctor --json\`. To initialize, ask the user to select a private data repository and a unique host ID; use \`weave init\` interactively or its explicit flags. The installer never hardcodes a data-repo name. If an existing Skill differs, do not auto-overwrite; ask the user before running \`weave skill install --replace\`.
+3. **Inspect the script** and obtain explicit permission to execute. Then run `bash /tmp/hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp --no-init` while this PR remains unmerged. Do not `git clone` source or run a remote `curl | bash` pipeline. The installer uses an ephemeral source tarball and bundles this Skill with the installed Python package.
+4. Verify `~/.hermes-weave/venv/bin/weave doctor --json`. To initialize, ask the user to select a private data repository and a unique host ID; use `weave init` interactively or its explicit flags. The installer never hardcodes a data-repo name. If an existing Skill differs, do not auto-overwrite; ask the user before running `weave skill install --replace`.
 5. Start a new Hermes session if the new Skill is not yet visible.
 
 ## Initializing the private data Git repository

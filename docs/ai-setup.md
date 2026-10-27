@@ -22,6 +22,7 @@ Paste the prompt below into a **local Hermes session** on each computer. It is a
 ## Bootstrap without an Agent
 
 ```bash
+mkdir -p ~/.local/share/hermes-weave
 git clone --branch feat/host-namespaced-sync-mvp \
   https://github.com/mickmetalholic/hermes-weave.git \
   ~/.local/share/hermes-weave/source

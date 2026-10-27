@@ -27,11 +27,11 @@ One Git remote, one clone per device; only `hosts/<this-host>/` is written by th
 
 ## One-script installation (macOS / Linux / WSL2)
 
-No source checkout needed. **Use a separately reviewed local installer**; it downloads a temporary GitHub source archive, installs the CLI in an isolated Python virtual environment, registers the bundled Hermes Skill, and then offers \`weave init\`. The source archive is removed after installation. It does **not** choose or create your private data repository without asking.
+No source checkout needed. **Use a separately reviewed local installer**; it downloads a temporary GitHub source archive, installs the CLI in an isolated Python virtual environment, registers the bundled Hermes Skill, and then offers `weave init`. The source archive is removed after installation. It does **not** choose or create your private data repository without asking.
 
-The source repository is currently **private**, so authenticate \`gh\` with access to the source repo first:
+The source repository is currently **private**, so authenticate `gh` with access to the source repo first:
 
-\`\`\`bash
+```bash
 gh auth login
 gh auth status
 
@@ -43,19 +43,19 @@ gh api -H 'Accept: application/vnd.github.raw+json' \
 # Read the downloaded script before running it.
 less hermes-weave-install.sh
 bash hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp
-\`\`\`
+```
 
-When this PR is merged, omit \`--ref\` and fetch \`install.sh\` from \`main\`. Requirements: Python 3.10+, Git, an authenticated GitHub CLI (\`gh\`, while source is private), and an existing Hermes installation at \`~/.hermes\`. Never run a downloaded script without inspecting it. Installation does **not** need \`git clone\` or a persistent \`source/\` directory.
+When this PR is merged, omit `--ref` and fetch `install.sh` from `main`. Requirements: Python 3.10+, Git, an authenticated GitHub CLI (`gh`, while source is private), and an existing Hermes installation at `~/.hermes`. Never run a downloaded script without inspecting it. Installation does **not** need `git clone` or a persistent `source/` directory.
 
-If Hermes itself is guiding setup and cannot answer terminal prompts, use \`bash hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp --no-init\` and then let it ask you for approved \`weave init\` parameters. The install script doesn't silently overwrite another \`weave\` executable or an existing different Hermes Skill. For a planned Skill upgrade, inspect the changes first and explicitly run \`weave skill install --replace\` to back up and replace it.
+If Hermes itself is guiding setup and cannot answer terminal prompts, use `bash hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp --no-init` and then let it ask you for approved `weave init` parameters. The install script doesn't silently overwrite another `weave` executable or an existing different Hermes Skill. For a planned Skill upgrade, inspect the changes first and explicitly run `weave skill install --replace` to back up and replace it.
 
 To let Hermes guide the process, paste [docs/ai-setup.md](docs/ai-setup.md) into a local session.
 
 ## Getting started
 
-Run \`weave init\` in a terminal (the installer can offer it automatically). It asks for a **unique stable host ID** and for your choice of **an existing private Git data repo or a new private GitHub repo**. Nothing about the data repository is hardcoded. All computers must use the **same** private data repository and a **different** host ID.
+Run `weave init` in a terminal (the installer can offer it automatically). It asks for a **unique stable host ID** and for your choice of **an existing private Git data repo or a new private GitHub repo**. Nothing about the data repository is hardcoded. All computers must use the **same** private data repository and a **different** host ID.
 
-\`\`\`bash
+```bash
 weave init
 weave sync
 weave review --json
@@ -64,9 +64,9 @@ weave review --json
 weave apply macbook code-review
 # Resolve a conflicting name with --as; replace requires opt-in backup.
 weave apply macbook code-review --as code-review-macbook
-\`\`\`
+```
 
-For a non-interactive agent that has already obtained your approval, use \`weave init --host HOST --remote OWNER/PRIVATE-REPO\` or \`weave init --host HOST --create-repo OWNER/PRIVATE-REPO\`. Data stays in \`~/.hermes-weave/data\`. Memory publication remains **off** until explicitly enabled.
+For a non-interactive agent that has already obtained your approval, use `weave init --host HOST --remote OWNER/PRIVATE-REPO` or `weave init --host HOST --create-repo OWNER/PRIVATE-REPO`. Data stays in `~/.hermes-weave/data`. Memory publication remains **off** until explicitly enabled.
 
 ## Filesystem layout
 

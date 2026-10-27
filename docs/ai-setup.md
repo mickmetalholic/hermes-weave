@@ -8,16 +8,16 @@ The [source repository](https://github.com/mickmetalholic/hermes-weave) is publi
 >
 > 源码仓库：https://github.com/mickmetalholic/hermes-weave
 >
-> 目前 v0.1 在 `feat/host-namespaced-sync-mvp` 分支，尚未合并到 main。请按以下步骤执行：
+> 安装和使用 `main` 分支的版本，请按以下步骤执行：
 >
 > 1. 检查 Python 3.10+、Git、现有 `~/.hermes/` 以及 `weave` 命令。缺少依赖时先告知我，不要擅自运行 sudo。
 > 2. 不要克隆长期保存的源码仓库。使用 `curl` 下载公开的安装脚本，先检查文件内容并获得我的同意，之后执行：
 >
 >    ```bash
 >    curl -fsSLo /tmp/hermes-weave-install.sh \
->      https://raw.githubusercontent.com/mickmetalholic/hermes-weave/feat/host-namespaced-sync-mvp/install.sh
+>      https://raw.githubusercontent.com/mickmetalholic/hermes-weave/main/install.sh
 >    # 先查看脚本内容；经我批准后运行：
->    bash /tmp/hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp --no-init
+>    bash /tmp/hermes-weave-install.sh --no-init
 >    ```
 >
 > 3. 安装完成后执行 `~/.hermes-weave/venv/bin/weave doctor --json` 检查。CLI 位于 `~/.hermes-weave/venv/`，Hermes Skill 位于 `~/.hermes/skills/hermes-weave/`。如果现有 Skill 内容不同，不要自动覆盖。
@@ -32,10 +32,10 @@ The [source repository](https://github.com/mickmetalholic/hermes-weave) is publi
 
 ```bash
 curl -fsSLo hermes-weave-install.sh \
-  https://raw.githubusercontent.com/mickmetalholic/hermes-weave/feat/host-namespaced-sync-mvp/install.sh
+  https://raw.githubusercontent.com/mickmetalholic/hermes-weave/main/install.sh
 
 # 审阅脚本后再执行
-bash hermes-weave-install.sh --ref feat/host-namespaced-sync-mvp
+bash hermes-weave-install.sh
 ```
 
-**注意：** 当前这是未合并的开发分支。合并后可从 `main` 下载并运行，无需 `--ref`。公开的是**源码**，不是各机器的私有数据仓库；已发布的记忆及其 Git 历史可能包含个人信息，绝不能放到公开仓库。
+**注意：** 公开的是**源码**，不是各机器的私有数据仓库；已发布的记忆及其 Git 历史可能包含个人信息，绝不能放到公开仓库。`main` 的内容会持续更新，正式部署可选择固定版本标签或提交。

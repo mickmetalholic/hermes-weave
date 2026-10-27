@@ -20,6 +20,14 @@ from uuid import uuid4
 GITHUB_REPO_RE = re.compile(r"^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})/[a-zA-Z0-9_.-]{1,100}$")
 
 
+def github_slug_from_remote(remote: str) -> str | None:
+    """Recognize GitHub remotes so we can verify they are PRIVATE before cloning."""
+    match = (re.fullmatch(r"git@github\.com:([^/]+/[^/]+?)(?:\.git)?/?", remote)
+             or re.fullmatch(r"https://github\.com/([^/]+/[^/]+?)(?:\.git)?/?", remote)
+             or re.fullmatch(r"ssh://git@github\.com/([^/]+/[^/]+?)(?:\.git)?/?", remote))
+    return match.group(1) if match and GITHUB_REPO_RE.fullmatch(match.group(1)) else None
+
+
 def bundled_skill() -> bytes:
     """Bundled, audited skill; not fetched from arbitrary Git content."""
     return files("hermes_weave").joinpath("resources", "SKILL.md").read_bytes()
@@ -88,6 +96,71 @@ def doctor(config_file: Path, hermes_home: Path) -> dict[str, Any]:
         "worktree_exists": Path(cfg.get("worktree", "")).expanduser().is_dir() if cfg else False,
         "share_memory": bool(cfg.get("share_memory", False)) if cfg else False,
     }
+
+
+def _prompt(question: str, default: str | None = None) -> str:
+    label = f"{question} [{default}]: " if default else f"{question}: "
+    try:
+        answer = input(label).strip()
+    except EOFError as exc:
+        from .cli import WeaveError
+        raise WeaveError("Initialization cancelled (input ended)") from exc
+    return answer or (default or "")
+
+
+def resolve_init_target(host: str | None, remote: str | None, create_repo: str | None) -> tuple[str, str]:
+    """Resolve interactive choices or explicit flags; never invent a data remote.
+
+    For a non-interactive Agent pass --host plus --remote/--create-repo
+    *only after the user approves the named repository*.
+    """
+    from .cli import WeaveError, validate_host
+    import socket
+
+    if remote and create_repo:
+        raise WeaveError("Choose --remote OR --create-repo, not both")
+    if not host or (not remote and not create_repo):
+        if not sys.stdin.isatty():
+            raise WeaveError("Run 'weave init' in an interactive terminal, or pass --host plus --remote/--create-repo")
+    if not host:
+        suggestion = re.sub(r"[^a-z0-9-]+", "-", socket.gethostname().split(".", 1)[0].lower()).strip("-")[:48]
+        default = suggestion if suggestion and re.fullmatch(r"[a-z][a-z0-9-]{0,47}", suggestion) else None
+        host = _prompt("Unique host ID for THIS computer", default)
+    validate_host(host)
+
+    if not remote and not create_repo:
+        print("Choose a PRIVATE data repository separate from the Hermes Weave source repository:")
+        print("  1) Connect an existing Git repository")
+        print("  2) Create a new PRIVATE GitHub repository (requires authenticated gh CLI)")
+        choice = _prompt("Choose 1 or 2")
+        if choice == "1":
+            remote = _prompt("Existing Git URL or GitHub OWNER/REPO")
+        elif choice == "2":
+            create_repo = _prompt("New GitHub OWNER/REPO (no default name)")
+            if not GITHUB_REPO_RE.fullmatch(create_repo):
+                raise WeaveError("Invalid GitHub OWNER/REPO name")
+            print(f"This creates {create_repo} as PRIVATE and initializes a README.")
+            if _prompt("Create this remote repository? (y/N)").lower() not in ("y", "yes"):
+                raise WeaveError("Repository creation cancelled")
+        else:
+            raise WeaveError("Choose 1 or 2; initialization cancelled")
+
+    if create_repo:
+        details = github_repo(create_repo, create=True)
+        if not details.get("created"):
+            raise WeaveError(f"Repository {create_repo} already exists; use --remote OWNER/REPO instead")
+        remote = details["ssh_url"]
+        print(f"Created PRIVATE GitHub data repository: {details['name']}")
+    elif remote:
+        slug = remote if GITHUB_REPO_RE.fullmatch(remote) else github_slug_from_remote(remote)
+        if slug:
+            details = github_repo(slug, create=False)
+            if remote == slug:
+                remote = details["ssh_url"]
+            print(f"Verified PRIVATE GitHub data repository: {details['name']}")
+    if not remote:
+        raise WeaveError("A private Git remote is required")
+    return host, remote
 
 
 def github_repo(slug: str, create: bool = False) -> dict[str, Any]:

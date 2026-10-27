@@ -3,7 +3,8 @@
 set -euo pipefail
 
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-VENV_DIR="${HERMES_WEAVE_VENV:-$HOME/.local/share/hermes-weave/venv}"
+WEAVE_HOME="${HERMES_WEAVE_HOME:-$HOME/.hermes-weave}"
+VENV_DIR="${HERMES_WEAVE_VENV:-$WEAVE_HOME/venv}"
 BIN_DIR="${HERMES_WEAVE_BIN_DIR:-$HOME/.local/bin}"
 
 if ! command -v python3 >/dev/null 2>&1; then
@@ -24,6 +25,17 @@ if sys.version_info < (3, 10):
     raise SystemExit('Python 3.10+ is required')
 PY
 
+if [[ -L "$WEAVE_HOME" ]]; then
+  echo "Refusing symlinked Hermes Weave home: $WEAVE_HOME" >&2
+  exit 1
+fi
+mkdir -p "$WEAVE_HOME"
+EXPECTED_SOURCE="$(cd "$WEAVE_HOME" && pwd -P)/source"
+if [[ "$SOURCE_DIR" != "$EXPECTED_SOURCE" ]]; then
+  echo "Clone this project into $EXPECTED_SOURCE before bootstrapping (current: $SOURCE_DIR)." >&2
+  exit 1
+fi
+mkdir -p "$WEAVE_HOME/logs"
 if [[ -e "$VENV_DIR" && ! -f "$VENV_DIR/bin/python" ]]; then
   echo "Refusing to reuse an unexpected virtualenv path: $VENV_DIR" >&2
   exit 1
@@ -46,4 +58,4 @@ else
   ln -sfn "$VENV_DIR/bin/weave" "$BIN_DIR/weave"
 fi
 "$VENV_DIR/bin/weave" doctor --json
-printf '\nHermes Weave installed. Start a new Hermes session, then initialize a private data repo with: weave init --host HOST --remote GIT_URL\n'
+printf '\nHermes Weave installed. Start a new Hermes session, then run: weave init\nThe wizard asks for a host ID and a private data repository, or offers to create one.\n'

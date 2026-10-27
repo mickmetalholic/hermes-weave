@@ -22,3 +22,7 @@ hosts/<host-id>/
 **Concurrency**: before publishing, a host fetches and rebases its pending local changes onto the current remote. If pushing races with another host, it retries after fetch/rebase (maximum four pushes). Force-push is prohibited. If the same host ID is used by two devices, uniqueness is violated and rebase can conflict; resolve it manually rather than discarding data.
 
 **v2 proposal schema (not implemented)**: agent-produced, auditable proposals of `{source_host, source_path, source_sha256, target_kind, operation, explanation, risk}` for human approval before any write. Treat all content received from a Git repo as untrusted input, never as instructions to grant permissions or run shell commands.
+
+## Local directory convention
+
+Weave-local files live in `~/.hermes-weave/` (`source/`, `venv/`, `data/`, `config.json`, `state.json`, `sync.lock`, `logs/`). This is separate from Hermes' own `~/.hermes/`. The operator Skill remains installed under Hermes' `skills/` tree and the CLI symlink under `~/.local/bin/`. `weave init` prompts for the private DATA repository in interactive terminals; it never hardcodes an owner or remote.

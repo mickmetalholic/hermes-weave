@@ -129,6 +129,11 @@ def skill_hash(directory: Path) -> str:
     return digest.hexdigest()
 
 
+def weave_home() -> Path:
+    """All Weave-owned local state lives here, independent of Hermes itself."""
+    return Path(os.environ.get("HERMES_WEAVE_HOME", "~/.hermes-weave")).expanduser().resolve()
+
+
 def config_path(args: argparse.Namespace) -> Path:
     return Path(args.config).expanduser().resolve()
 
@@ -244,7 +249,6 @@ def skill_directories(root: Path) -> list[tuple[str, Path]]:
 
 
 def init(args: argparse.Namespace) -> None:
-    host = validate_host(args.host)
     dest = Path(args.worktree).expanduser().resolve()
     home = Path(args.hermes_home).expanduser().resolve()
     config_file = config_path(args)
@@ -256,15 +260,23 @@ def init(args: argparse.Namespace) -> None:
         raise WeaveError(f"Hermes home does not exist: {home}")
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9/_-]{0,95}", args.branch) or ".." in args.branch or "//" in args.branch:
         raise WeaveError("Invalid branch name")
+    # Ask only after local preflight, so a pre-existing node cannot accidentally
+    # trigger another private repository creation.
+    from .assistant import resolve_init_target
+    chosen_host, chosen_remote = resolve_init_target(args.host, args.remote, args.create_repo)
+    host = validate_host(chosen_host)
     # A sync DATA repository must never be the SOURCE repository.
-    remote = args.remote.lower().rstrip("/").removesuffix(".git")
-    if remote.endswith("/mickmetalholic/hermes-weave") or remote.endswith(":mickmetalholic/hermes-weave"):
-        raise WeaveError("Use a separate PRIVATE data repository, not mickmetalholic/hermes-weave")
-    if args.remote.startswith(("https://", "http://")) and "@" in args.remote.split("/", 3)[2]:
+    remote_name = chosen_remote.lower().rstrip("/").removesuffix(".git")
+    if re.search(r"(?:/|:)[^/:]+/hermes-weave$", remote_name):
+        raise WeaveError("Use a separate PRIVATE data repository, not the hermes-weave SOURCE repository")
+    if chosen_remote.startswith(("https://", "http://")) and "@" in chosen_remote.split("/", 3)[2]:
         raise WeaveError("Do not put credentials into a Git remote URL; configure Git authentication separately")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    run_git(None, "clone", "--branch", args.branch, "--single-branch", "--", args.remote, str(dest))
-    cfg = {"schema": SCHEMA, "host": host, "remote": args.remote, "branch": args.branch,
+    run_git(None, "clone", "--branch", args.branch, "--single-branch", "--", chosen_remote, str(dest))
+    if (dest / "hosts" / host).exists():
+        # Preserve the clone for inspection instead of assuming this host identity.
+        raise WeaveError(f"Host ID {host!r} already publishes in the data repository. Choose a unique --host. Clone left at {dest} for inspection")
+    cfg = {"schema": SCHEMA, "host": host, "remote": chosen_remote, "branch": args.branch,
            "worktree": str(dest), "hermes_home": str(home),
            "share_memory": bool(args.share_memory),
            "shared_config_file": str(Path(args.shared_config).expanduser().resolve()) if args.shared_config else None}
@@ -488,14 +500,16 @@ def promote(cfg: dict[str, Any], args: argparse.Namespace) -> None:
 
 def parser() -> argparse.ArgumentParser:
     cli = argparse.ArgumentParser(prog="weave", description="Safe knowledge exchange among independent Hermes agents")
-    cli.add_argument("--config", default="~/.config/hermes-weave/config.json", help="Local CLI configuration path")
+    cli.add_argument("--config", default=str(weave_home() / "config.json"), help="Local CLI configuration path")
     sub = cli.add_subparsers(dest="command", required=True)
-    init_cmd = sub.add_parser("init", help="Register a unique host and clone the PRIVATE DATA repository")
-    init_cmd.add_argument("--host", required=True)
-    init_cmd.add_argument("--remote", required=True, help="Separate private DATA Git remote (not the source-code repo)")
+    init_cmd = sub.add_parser("init", help="Interactive wizard to register this host and choose/create a PRIVATE data repository")
+    init_cmd.add_argument("--host", help="Unique, stable host ID; prompted if omitted in a terminal")
+    repo_group = init_cmd.add_mutually_exclusive_group()
+    repo_group.add_argument("--remote", help="Existing private DATA Git URL or GitHub OWNER/REPO")
+    repo_group.add_argument("--create-repo", metavar="OWNER/REPO", help="Explicitly create a NEW private GitHub data repository via gh")
     init_cmd.add_argument("--branch", default="main")
     init_cmd.add_argument("--hermes-home", default="~/.hermes")
-    init_cmd.add_argument("--worktree", default="~/.local/share/hermes-weave/data")
+    init_cmd.add_argument("--worktree", default=str(weave_home() / "data"))
     init_cmd.add_argument("--share-memory", action="store_true", help="Opt-in to publishing private MEMORY.md and USER.md")
     init_cmd.add_argument("--shared-config", help="Explicitly curated and redacted YAML file to publish (NOT Hermes config.yaml)")
     skill_cmd = sub.add_parser("skill", help="Install the bundled AI-operable Hermes Skill")

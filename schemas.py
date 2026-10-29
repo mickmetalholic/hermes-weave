@@ -53,5 +53,6 @@ APPLY = spec(
         "as_name": {"type": "string", "description": "Optional alternate name to avoid overwriting local Skill"},
         "replace": {"type": "boolean", "description": "Explicitly back up and replace the destination; defaults to false"},
         "user_approved": APPROVAL,
+        "replace_approved": {"type": "boolean", "description": "Separate explicit approval to replace an existing local Skill and create a backup."},
     }, ("host", "skill", "user_approved"),
 )

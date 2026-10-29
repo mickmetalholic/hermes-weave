@@ -25,4 +25,4 @@ hosts/<host-id>/
 
 ## Local directory convention
 
-Weave-local files live in `~/.hermes-weave/` (`venv/`, `data/`, `config.json`, `state.json`, `sync.lock`, `logs/`). This is separate from Hermes' own `~/.hermes/`. The operator Skill remains installed under Hermes' `skills/` tree and the CLI symlink under `~/.local/bin/`. `weave init` prompts for the private DATA repository in interactive terminals; it never hardcodes an owner or remote.
+Weave-local files live in `~/.hermes-weave/` (`venv/`, `data/`, `config.json`, `state.json`, `sync.lock`, `logs/`). This is separate from Hermes' own `~/.hermes/`. The native plugin registers its read-only Skill as `hermes-weave:hermes-weave` directly from the installed plugin directory and provides `hermes weave` terminal commands; no Skill copy or separate CLI executable is required. The standalone CLI remains available for legacy installations. `weave init` prompts for the private DATA repository in interactive terminals; it never hardcodes an owner or remote.

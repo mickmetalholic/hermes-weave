@@ -84,7 +84,9 @@ def _approved(params: dict, action: str) -> str | None:
 
 
 def status(params: dict, **kwargs) -> str:
-    return _json(_invoke(["doctor", "--json"], timeout=20))
+    result = _invoke(["doctor", "--json"], timeout=20)
+    result["integration"] = {"type": "native-hermes-plugin", "bundled_skill": "hermes-weave:hermes-weave"}
+    return _json(result)
 
 
 def review(params: dict, **kwargs) -> str:

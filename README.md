@@ -6,6 +6,37 @@ Hermes Weave is a Git-backed, multi-host knowledge exchange for independently ru
 
 > **Status:** v0.1 experimental MVP. Supports publishing safe text-based skills, optional memory snapshots, optional curated config snapshots, and manual skill imports. It **does not** semantically merge memory/config or automatically install peer skills. Review imported content before use.
 
+> **v0.2 native-plugin preview:** Install directly through Hermes's plugin manager. The Git-backed CLI remains available for existing users; the plugin ships the same core and a namespaced Skill. Automatic semantic memory/config merging is not yet available.
+
+## Recommended: Native Hermes Plugin
+
+Install **once per computer** (macOS/Linux/WSL2, Hermes Agent with native plugin support):
+
+```bash
+hermes plugins install mickmetalholic/hermes-weave --enable
+hermes plugins doctor hermes-weave --ci
+```
+
+Then initialize each computer with a distinct host ID and the SAME **private data** Git repository:
+
+```bash
+hermes weave init
+hermes weave sync
+hermes weave review --json
+```
+
+You can also ask Hermes in chat: **“使用 Hermes Weave 检查状态，帮我初始化本机并审核其他机器的新 Skills。”** The plugin registers `weave_status`, `weave_init`, `weave_pull`, `weave_sync`, `weave_review` and `weave_apply` as Agent tools, plus read-only `/weave status` and `/weave review` chat commands. The bundled Skill can be loaded as `hermes-weave:hermes-weave`.
+
+The plugin executes the existing Python synchronization core from the installed plugin directory; it **does not require pip, a separate virtual environment, or `weave skill install`**. It does require Python 3.10+ and Git on the Hermes host. Mutable files stay under `~/.hermes-weave/`, never in the plugin install directory.
+
+**Privacy and safety:** the source repo is public; your data repository must be private. `weave init` prompts you to connect an existing private repo or create one. For GitHub data repositories, `gh` authentication may be needed to create/verify privacy. Memory publication defaults to **OFF**; no imported Skill, MCP command, memory or configuration is applied automatically. Agent write tools require explicit approval flags, and the bundled Skill instructs the Agent to ask the user first.
+
+To update later, run `hermes plugins update hermes-weave`. To inspect the plugin before enabling it, install with `--no-enable` and use `hermes plugins doctor hermes-weave --ci`. This is a new integration: our CI tests the plugin contract with a simulated Hermes context; final verification with `hermes plugins doctor` on an actual Hermes installation remains recommended.
+
+### Legacy standalone CLI
+
+If you already use the standalone Python CLI installed through `install.sh`, it remains supported. The section below shows that alternative. **Don't run both independent scheduled sync mechanisms against the same host identity.** Install the native plugin as your primary interface, and migrate only after confirming `hermes weave doctor --json` sees your existing `~/.hermes-weave/config.json`.
+
 ## Architecture
 
 ```text
@@ -25,9 +56,9 @@ Separate PRIVATE DATA repo:  (chosen by user during weave init)/
 
 One Git remote, one clone per device; only `hosts/<this-host>/` is written by that node. The remote is an ordinary Git repository (GitHub private repo, Gitea, or SSH bare Git). **Do not use the source-code repository as the data repository.**
 
-## One-script installation (macOS / Linux / WSL2)
+## Legacy one-script CLI installation (macOS / Linux / WSL2)
 
-**The source repository is now public.** You can download one local script; no GitHub CLI login or manual source checkout is necessary to install Hermes Weave.
+**For users not installing the native Hermes Plugin,** the source repository is public. You can download one local script; no GitHub CLI login or manual source checkout is necessary to install Hermes Weave.
 
 Install from the default `main` branch:
 
@@ -46,7 +77,7 @@ The **private data** repository is separate. `weave init` asks you to pick an ex
 
 For an AI-guided, non-interactive setup, run the installer with `--no-init` and let Hermes ask you for your desired host ID and private repository before running `weave init`. The installer refuses to silently overwrite a different existing Skill or an unrelated `weave` command.
 
-See [docs/ai-setup.md](docs/ai-setup.md) for a ready-to-paste Hermes Agent prompt. Because `main` can change over time, review the installer before execution; prefer a pinned release tag or commit for reproducible production deployments.
+See [docs/ai-setup.md](docs/ai-setup.md) for the native-plugin installation prompt, or use the legacy instructions below. Because `main` can change over time, review the installer before execution; prefer a pinned release tag or commit for reproducible production deployments.
 
 ## Getting started
 

@@ -1,0 +1,13 @@
+name: hermes-weave
+version: "0.2.0"
+description: Git-backed knowledge exchange across independent Hermes Agent machines with approval-first workflows
+author: Hermes Weave contributors
+license: MIT
+homepage: https://github.com/mickmetalholic/hermes-weave
+provides_tools:
+  - weave_status
+  - weave_review
+  - weave_pull
+  - weave_init
+  - weave_sync
+  - weave_apply
